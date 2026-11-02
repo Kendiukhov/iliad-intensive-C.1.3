@@ -16,9 +16,8 @@ Steganographic communication: can a model secretly transmit a sequence of number
 - Run scripts: `uv run python <script.py>`
 - Install dependencies: `uv add <package>` (never edit pyproject.toml directly)
 
-### Secrets & Environment
-- `.env` is loaded automatically by `load_dotenv()` in `lib/sampling.py`
-- Keys live in `.env` (`OPEN_ROUTER_API_KEY`) — read them with `os.environ[...]`, never hardcode
+### Model Access
+- Model calls go through the Claude Code CLI (`claude -p`, see `lib/sampling.py`), so they run on your Claude subscription — log in once with `claude auth login`. No API keys or `.env` needed.
 
 ### Directory Layout
 
@@ -106,7 +105,7 @@ Conventions:
 
 ### Run Discipline
 
-Only run debug configs unsolicited. Never launch a real (non-debug) experiment without explicit approval — they cost money (real API calls). Ask "want me to run it?" rather than running and reporting after the fact.
+Only run debug configs unsolicited. Never launch a real (non-debug) experiment without explicit approval — they make real model calls on your Claude subscription. Ask "want me to run it?" rather than running and reporting after the fact.
 
 ## YAML Gotchas
 

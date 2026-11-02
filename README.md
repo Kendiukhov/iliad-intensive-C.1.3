@@ -10,7 +10,8 @@ cd experiments/<name>
 uv run python main.py -c configs/<config>.yaml
 ```
 
-Needs `OPEN_ROUTER_API_KEY` in `.env` (loaded automatically). See `CLAUDE.md` for conventions.
+Model calls run through the Claude Code CLI on your Claude subscription: log in once with
+`claude auth login` (no API key needed). See `CLAUDE.md` for conventions.
 
 ## Editor: LazyVim
 

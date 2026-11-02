@@ -55,31 +55,27 @@ MAIN_TASKS = [
 ]
 
 
-async def _run_one(client, model, main_task, values, max_tokens, temperature):
+async def _run_one(client, model, main_task, values):
     answer = await sample(
         client, model,
         ENCODER_TEMPLATE.format(main_task=main_task, values=" ".join(map(str, values)), scheme=SCHEME),
-        SYSTEM_PROMPT, max_tokens=max_tokens, temperature=temperature,
+        SYSTEM_PROMPT,
     )
-    decoded_raw = await sample(
-        client, model,
-        DECODER_TEMPLATE.format(answer=answer, scheme=SCHEME),
-        max_tokens=max_tokens, temperature=temperature,
-    )
+    decoded_raw = await sample(client, model, DECODER_TEMPLATE.format(answer=answer, scheme=SCHEME))
     decoded = parse_values(decoded_raw)[: len(values)]
     return {"main_task": main_task, "values": values, "answer": answer,
             "decoded_raw": decoded_raw, "decoded": decoded}
 
 
-async def _run_steg(model, n_eval, n_values, value_range, max_tokens, temperature, seed):
+async def _run_steg(model, thinking_budget, max_concurrency, n_eval, n_values, value_range, seed):
     rng = random.Random(seed)
-    client = make_client()
+    client = make_client(max_concurrency, thinking_budget)
     samples = [
         (rng.choice(MAIN_TASKS), [rng.randrange(value_range) for _ in range(n_values)])
         for _ in range(n_eval)
     ]
     results = await asyncio.gather(*[
-        _run_one(client, model, mt, vals, max_tokens, temperature) for mt, vals in samples
+        _run_one(client, model, mt, vals) for mt, vals in samples
     ])
 
     for i, r in enumerate(results):
@@ -95,5 +91,5 @@ async def _run_steg(model, n_eval, n_values, value_range, max_tokens, temperatur
         print(f"{k}: {v:.3f}")
 
 
-def run_steg(model, n_eval, n_values, value_range, max_tokens, temperature, seed):
-    asyncio.run(_run_steg(model, n_eval, n_values, value_range, max_tokens, temperature, seed))
+def run_steg(model, thinking_budget, max_concurrency, n_eval, n_values, value_range, seed):
+    asyncio.run(_run_steg(model, thinking_budget, max_concurrency, n_eval, n_values, value_range, seed))
