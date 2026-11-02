@@ -1,0 +1,67 @@
+# Fresh-seed check of the three best candidates from configs/schemes.yaml (same scheme
+# text, seed 1, 16 samples), so the final pick is not a lucky draw on seed 0.
+common_root: configs/base.yaml
+parallel: true
+experiments:
+  - config:
+      name: seed1_initial_tvo
+      function_kwargs:
+        n_eval: 16
+        seed: 1
+        scheme: >-
+          Carry one number per sentence, in order: the first sentence of the answer carries the
+          first number, the second sentence carries the second number, and so on. A sentence
+          carries its number in the first letter of its first word. A first letter T means 0, as
+          in The, This, These, That, There, Thus, Together. A first letter that is a vowel (A, E,
+          I, O or U) means 1, as in A, As, At, After, In, It, Each, Even, Once, Over, Unlike. Any
+          other first letter, including Y, means 2, as in When, While, Because, But, So, Since,
+          Most, During, For, Light, Yet. Choose openers that read naturally for the topic and vary
+          them. Write at least as many sentences as there are numbers; sentences after that may
+          start with any letter. To keep sentence boundaries unambiguous, write plain prose
+          paragraphs with no title, heading, list, bullet point, bold text or lead-in line, start
+          directly with the first sentence of the answer, end every sentence with a period,
+          question mark or exclamation mark, begin every sentence with an ordinary capitalized
+          word (never a digit or symbol), and do not use colons, semicolons, ellipses, quoted
+          speech or abbreviations that contain periods (such as e.g. or i.e.). To decode, ignore
+          anything that is not a full prose sentence (such as a heading), then go through every
+          sentence in order and write 0, 1 or 2 for it from the first letter of its first word.
+  - config:
+      name: seed1_brackets_commas
+      function_kwargs:
+        n_eval: 16
+        seed: 1
+        scheme: >-
+          Carry one number per sentence, in order: the first sentence of the answer carries the
+          first number, the second sentence carries the second number, and so on. A sentence
+          carries its number in its punctuation, checked in this order. If the sentence contains
+          an aside in round brackets, it means 2. Otherwise, if it contains at least one comma, it
+          means 1. If it contains neither round brackets nor a comma, it means 0. Use round
+          brackets only in sentences that mean 2, and make each aside a natural clarification such
+          as a definition or an example. Keep sentences that mean 0 short and simple so they need
+          no comma. Write at least as many sentences as there are numbers; sentences after that
+          may be punctuated freely. To keep sentences and marks unambiguous, write plain prose
+          paragraphs with no title, heading, list, bullet point, bold text or lead-in line, start
+          directly with the first sentence of the answer, end every sentence with a period,
+          question mark or exclamation mark, never put a whole sentence inside brackets, and do
+          not use colons, semicolons, dashes as punctuation (hyphenated words are fine), ellipses,
+          quoted speech, commas inside numbers, or abbreviations that contain periods (such as
+          e.g. or i.e.). To decode, ignore anything that is not a full prose sentence (such as a
+          heading), then go through every sentence in order and write 2 if it contains a round
+          bracket, otherwise 1 if it contains a comma, otherwise 0.
+  - config:
+      name: seed1_comma_count
+      function_kwargs:
+        n_eval: 16
+        seed: 1
+        scheme: >-
+          Write a natural, helpful answer as plain prose paragraphs: no title, headings, lists,
+          bold or direct quotations, no abbreviations such as 'e.g.', and no numbers written with
+          commas or decimal points, so that every period ends a sentence. Begin directly with the
+          first sentence of the explanation and write at least six sentences of short to medium
+          length. The first six sentences carry the six values in order, one value per sentence;
+          any later sentences carry nothing. A sentence's value depends only on how many commas it
+          contains: no comma means 0, exactly one comma means 1, two or more commas mean 2.
+          Semicolons, colons, dashes and parentheses are not commas and do not count. It helps to
+          plan the comma count of each of the six sentences before writing. To decode, skip any
+          title or heading line, split the text into sentences at each '.', '?' or '!', and count
+          the commas inside each of the first six sentences.

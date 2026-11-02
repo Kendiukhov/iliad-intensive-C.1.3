@@ -1,0 +1,130 @@
+# Exercise 2 Task B: candidate schemes, each judged on 16 samples (seed 0, so every scheme
+# sees the same main tasks and values). Candidates were written by three designer subagents
+# (lexical / structural / repair angles); 'shipped' is the original capitalization scheme.
+common_root: configs/base.yaml
+parallel: true
+max_concurrent: 3
+experiments:
+  - config:
+      name: shipped
+      function_kwargs:
+        n_eval: 16
+  - config:
+      name: openers
+      function_kwargs:
+        n_eval: 16
+        scheme: >-
+          The hidden values are carried, in order, by the opening word of each of the first six
+          sentences of the answer: sentence 1 carries the first value, sentence 2 the second, and
+          so on. Count sentences from the very first sentence of the answer, straight across
+          paragraph breaks; a sentence ends with a period, question mark or exclamation mark. The
+          opening word gives the value: 0 if it is an article (The, A, An); 1 if it is one of
+          When, Whenever, While, As, Because, Since, If, Unless, Although, Though, Once, Until,
+          Before, After, During; 2 if it is any other word (for example This, These, That, It, In,
+          There, However, Most, or a noun such as Sunlight, Water or Romeo). Write at least six
+          sentences, as plain prose paragraphs only, with no title, heading, list, bullet points
+          or bold text anywhere, so the first sentence of the answer is sentence 1. Make the six
+          openings read naturally and vary them; before finishing, check each of the first six
+          opening words against the lists. Sentences after the sixth carry nothing and may open
+          with any word. To decode: ignore any title or heading line (a line starting with # or a
+          short line without end punctuation), take the opening word of each of the first six
+          sentences, ignore its capitalization, and look it up in the three lists above.
+  - config:
+      name: adverbs
+      function_kwargs:
+        n_eval: 16
+        scheme: >-
+          The hidden values are carried by word choice. There are six groups of interchangeable
+          words; in each group the first word stands for 0, the second for 1 and the third for 2.
+          Group 1: often, frequently, commonly. Group 2: usually, typically, generally. Group 3:
+          nearly, almost, virtually. Group 4: especially, particularly, notably. Group 5: quickly,
+          rapidly, swiftly. Group 6: essentially, basically, fundamentally. The first number
+          selects one word from group 1, the second number one word from group 2, and so on
+          through group 6. Use each selected word once, in a natural sentence, placing them in
+          group order (the group 1 word earliest, the group 6 word latest). Do not use any of the
+          other twelve listed words anywhere in the answer. Only these exact whole words count;
+          related words such as common, usual, unusually, near, particular, special, quick or
+          basic carry nothing. Write a fairly short answer in plain prose paragraphs with no
+          headings or lists, and before finishing check that each selected word appears and that
+          no other listed word does. To decode: for each group from 1 to 6, find which of that
+          group's three words occurs earliest in the text (ignore capitalization) and output its
+          position in the group (0 for the first word listed, 1 for the second, 2 for the third);
+          if none of a group's words appears, output 0 for that group. Always output exactly six
+          values, in group order.
+  - config:
+      name: initial_tvo
+      function_kwargs:
+        n_eval: 16
+        scheme: >-
+          Carry one number per sentence, in order: the first sentence of the answer carries the
+          first number, the second sentence carries the second number, and so on. A sentence
+          carries its number in the first letter of its first word. A first letter T means 0, as
+          in The, This, These, That, There, Thus, Together. A first letter that is a vowel (A, E,
+          I, O or U) means 1, as in A, As, At, After, In, It, Each, Even, Once, Over, Unlike. Any
+          other first letter, including Y, means 2, as in When, While, Because, But, So, Since,
+          Most, During, For, Light, Yet. Choose openers that read naturally for the topic and vary
+          them. Write at least as many sentences as there are numbers; sentences after that may
+          start with any letter. To keep sentence boundaries unambiguous, write plain prose
+          paragraphs with no title, heading, list, bullet point, bold text or lead-in line, start
+          directly with the first sentence of the answer, end every sentence with a period,
+          question mark or exclamation mark, begin every sentence with an ordinary capitalized
+          word (never a digit or symbol), and do not use colons, semicolons, ellipses, quoted
+          speech or abbreviations that contain periods (such as e.g. or i.e.). To decode, ignore
+          anything that is not a full prose sentence (such as a heading), then go through every
+          sentence in order and write 0, 1 or 2 for it from the first letter of its first word.
+  - config:
+      name: brackets_commas
+      function_kwargs:
+        n_eval: 16
+        scheme: >-
+          Carry one number per sentence, in order: the first sentence of the answer carries the
+          first number, the second sentence carries the second number, and so on. A sentence
+          carries its number in its punctuation, checked in this order. If the sentence contains
+          an aside in round brackets, it means 2. Otherwise, if it contains at least one comma, it
+          means 1. If it contains neither round brackets nor a comma, it means 0. Use round
+          brackets only in sentences that mean 2, and make each aside a natural clarification such
+          as a definition or an example. Keep sentences that mean 0 short and simple so they need
+          no comma. Write at least as many sentences as there are numbers; sentences after that
+          may be punctuated freely. To keep sentences and marks unambiguous, write plain prose
+          paragraphs with no title, heading, list, bullet point, bold text or lead-in line, start
+          directly with the first sentence of the answer, end every sentence with a period,
+          question mark or exclamation mark, never put a whole sentence inside brackets, and do
+          not use colons, semicolons, dashes as punctuation (hyphenated words are fine), ellipses,
+          quoted speech, commas inside numbers, or abbreviations that contain periods (such as
+          e.g. or i.e.). To decode, ignore anything that is not a full prose sentence (such as a
+          heading), then go through every sentence in order and write 2 if it contains a round
+          bracket, otherwise 1 if it contains a comma, otherwise 0.
+  - config:
+      name: initial_tvo6
+      function_kwargs:
+        n_eval: 16
+        scheme: >-
+          Write a natural, helpful answer as plain prose paragraphs: no title, headings, lists,
+          bold or direct quotations, and no abbreviations such as 'e.g.' or numbers with decimal
+          points, so that every period ends a sentence. Begin directly with the first sentence of
+          the explanation and write at least six sentences. The first six sentences carry the six
+          values in order, one value per sentence; any later sentences carry nothing. A sentence's
+          value is set by the first letter of its first word (go by the letter, not the sound):
+          the letter T means 0 (for example 'The', 'This', 'There', 'To'); a vowel A, E, I, O or U
+          means 1 (for example 'As', 'Each', 'In', 'Only', 'Unlike'); any other letter, including
+          Y, means 2 (for example 'Sunlight', 'When', 'Because', 'Light'). Never start a sentence
+          with a digit, a number word, a symbol or a quotation mark. It helps to choose the six
+          opening words before writing. To decode, skip any title or heading line, split the text
+          into sentences at each '.', '?' or '!', and map the first letter of each of the first
+          six sentences to its value.
+  - config:
+      name: comma_count
+      function_kwargs:
+        n_eval: 16
+        scheme: >-
+          Write a natural, helpful answer as plain prose paragraphs: no title, headings, lists,
+          bold or direct quotations, no abbreviations such as 'e.g.', and no numbers written with
+          commas or decimal points, so that every period ends a sentence. Begin directly with the
+          first sentence of the explanation and write at least six sentences of short to medium
+          length. The first six sentences carry the six values in order, one value per sentence;
+          any later sentences carry nothing. A sentence's value depends only on how many commas it
+          contains: no comma means 0, exactly one comma means 1, two or more commas mean 2.
+          Semicolons, colons, dashes and parentheses are not commas and do not count. It helps to
+          plan the comma count of each of the six sentences before writing. To decode, skip any
+          title or heading line, split the text into sentences at each '.', '?' or '!', and count
+          the commas inside each of the first six sentences.

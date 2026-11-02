@@ -1,0 +1,6 @@
+common_root: configs/base.yaml
+experiments:
+  - config:
+      name: scheme_answers_seed1
+      function_kwargs:
+        dataset_path: data/scheme_answers_seed1.jsonl
