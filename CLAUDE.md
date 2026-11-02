@@ -14,10 +14,9 @@ decode) and scores how many numbers survive the round-trip.
 ## Conventions
 
 - **uv** is the package manager. Run: `uv run python steg.py`. Add deps: `uv add <package>` (never edit pyproject.toml directly).
-- `.env` is loaded automatically by `load_dotenv()` at the top of `steg.py`.
-- Keys live in `.env` (`OPEN_ROUTER_API_KEY`) — read them with `os.environ[...]`, never hardcode.
+- Model calls go through the Claude Code CLI (`claude -p`, see `ask()` in `steg.py`), so they run on your Claude subscription — log in once with `claude auth login`. No API keys or `.env` needed.
 - Keep it simple: one script, minimal code, no speculative error handling.
-- Runs cost money (real API calls). Don't launch a run without asking; small debug runs are fine.
+- Runs make real model calls on your Claude subscription. Don't launch a run without asking; small debug runs are fine.
 
 ## YAML Gotchas
 
