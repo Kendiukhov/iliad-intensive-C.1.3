@@ -1,31 +1,62 @@
+import asyncio
+import json
 import os
+import tempfile
 
-from openai import AsyncOpenAI
-from dotenv import load_dotenv
-
-load_dotenv()
-
-
-def build_messages(prompt: str, system: str | None = None) -> list[dict]:
-    """Assemble a chat message list, with an optional system turn first."""
-    messages = []
-    if system:
-        messages.append({"role": "system", "content": system})
-    messages.append({"role": "user", "content": prompt})
-    return messages
+# Model calls go through the Claude Code CLI (`claude -p`), so they run on your Claude
+# subscription rather than a metered API key. Log in once with `claude auth login`.
 
 
-def make_client(api_key: str | None = None, base_url: str = "https://openrouter.ai/api/v1") -> AsyncOpenAI:
-    return AsyncOpenAI(api_key=api_key or os.environ["OPEN_ROUTER_API_KEY"], base_url=base_url)
+def build_command(model: str, system: str | None, json_schema: dict | None = None) -> list[str]:
+    """CLI args for one tool-less completion; `system` replaces Claude Code's own system prompt."""
+    cmd = [
+        "claude", "-p", "--model", model, "--system-prompt", system or "",
+        "--tools", "", "--safe-mode", "--no-session-persistence", "--output-format", "json",
+    ]
+    if json_schema is not None:
+        cmd += ["--json-schema", json.dumps(json_schema)]
+    return cmd
 
 
-async def sample(client, model, prompt, system=None, *, max_tokens, temperature):
-    """One chat completion. Returns the message content (empty string if none)."""
-    resp = await client.chat.completions.create(
-        model=model,
-        messages=build_messages(prompt, system),
-        max_tokens=max_tokens,
-        temperature=temperature,
-        extra_body={"reasoning": {"effort": "low"}},
-    )
-    return resp.choices[0].message.content or ""
+def parse_result(stdout: str, structured: bool) -> str:
+    """The reply in `claude -p --output-format json` output (re-serialized JSON if `structured`)."""
+    data = json.loads(stdout)
+    if data["is_error"]:
+        raise RuntimeError(f"claude -p failed: {data['result']}")
+    return json.dumps(data["structured_output"]) if structured else data["result"]
+
+
+class ClaudeCodeClient:
+    """Runs completions as `claude -p` subprocesses, at most `max_concurrency` at a time."""
+
+    def __init__(self, max_concurrency: int, thinking_budget: int):
+        self.semaphore = asyncio.Semaphore(max_concurrency)
+        # An empty cwd keeps this repo's CLAUDE.md and git state out of the model's context, and
+        # dropping CLAUDE* vars stops a parent Claude Code session's settings leaking into the CLI
+        # (CLAUDE_CONFIG_DIR stays: it says where your login lives).
+        self.cwd = tempfile.mkdtemp(prefix="claude-sampling-")
+        self.env = {k: v for k, v in os.environ.items()
+                    if not k.startswith("CLAUDE") or k == "CLAUDE_CONFIG_DIR"}
+        self.env["MAX_THINKING_TOKENS"] = str(thinking_budget)
+
+    async def complete(self, model: str, prompt: str, system: str | None = None,
+                       json_schema: dict | None = None) -> str:
+        async with self.semaphore:
+            proc = await asyncio.create_subprocess_exec(
+                *build_command(model, system, json_schema), cwd=self.cwd, env=self.env,
+                stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate(prompt.encode())
+        if not stdout:
+            raise RuntimeError(f"claude -p exited with {proc.returncode}: {stderr.decode()}")
+        return parse_result(stdout.decode(), structured=json_schema is not None)
+
+
+def make_client(max_concurrency: int, thinking_budget: int) -> ClaudeCodeClient:
+    return ClaudeCodeClient(max_concurrency, thinking_budget)
+
+
+async def sample(client, model, prompt, system=None):
+    """One completion. Returns the reply text."""
+    return await client.complete(model, prompt, system)
