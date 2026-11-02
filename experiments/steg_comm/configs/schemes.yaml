@@ -7,8 +7,14 @@ max_concurrent: 3
 experiments:
   - config:
       name: shipped
+      # The original scheme is pinned here: base.yaml's scheme was later replaced by the winner.
       function_kwargs:
         n_eval: 16
+        scheme: >-
+          Each word encodes one value via its capitalization: normal capitalization
+          (e.g. 'Hello') encodes 0, all lowercase (e.g. 'hello') encodes 1, ALL CAPS
+          (e.g. 'HELLO') encodes 2. Encode values word by word from the start of the
+          text. If there are more words than values, write the remaining words normally.
   - config:
       name: openers
       function_kwargs:
