@@ -44,22 +44,28 @@ def test_parse_error_raises():
 
 
 def test_client_runs_cli(tmp_path, monkeypatch):
-    """A fake `claude` on PATH echoes what it was given: prompt via stdin, clean env, own cwd."""
+    """A fake `claude` on PATH echoes what it was given: prompt via stdin, clean env, empty cwd."""
     fake = tmp_path / "claude"
     fake.write_text(
         "#!/usr/bin/env python3\n"
         "import json, os, sys\n"
         "seen = {'argv': sys.argv[1:], 'stdin': sys.stdin.read(), 'cwd': os.getcwd(),\n"
-        "        'thinking': os.environ.get('MAX_THINKING_TOKENS'), 'claudecode': os.environ.get('CLAUDECODE')}\n"
+        "        'thinking': os.environ.get('MAX_THINKING_TOKENS'), 'claudecode': os.environ.get('CLAUDECODE'),\n"
+        "        'api_key': os.environ.get('ANTHROPIC_API_KEY'), 'config_dir': os.environ.get('CLAUDE_CONFIG_DIR'),\n"
+        "        'cwd_files': os.listdir('.')}\n"
         "print(json.dumps({'is_error': False, 'result': json.dumps(seen)}))\n"
     )
     fake.chmod(0o755)
     monkeypatch.setenv("PATH", f"{tmp_path}{os.pathsep}{os.environ['PATH']}")
     monkeypatch.setenv("CLAUDECODE", "1")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", "/tmp/claude-config")
 
     seen = json.loads(asyncio.run(sample(make_client(max_concurrency=2, thinking_budget=7), "m", "hi", "sys")))
     assert seen["stdin"] == "hi"
     assert _arg(seen["argv"], "--system-prompt") == "sys"
     assert seen["thinking"] == "7"
     assert seen["claudecode"] is None
-    assert seen["cwd"] != os.getcwd()
+    assert seen["cwd"] != os.getcwd() and seen["cwd_files"] == []
+    assert seen["api_key"] is None  # stays on the subscription login
+    assert seen["config_dir"] == "/tmp/claude-config"

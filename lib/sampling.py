@@ -31,12 +31,15 @@ class ClaudeCodeClient:
 
     def __init__(self, max_concurrency: int, thinking_budget: int):
         self.semaphore = asyncio.Semaphore(max_concurrency)
-        # An empty cwd keeps this repo's CLAUDE.md and git state out of the model's context, and
-        # dropping CLAUDE* vars stops a parent Claude Code session's settings leaking into the CLI
-        # (CLAUDE_CONFIG_DIR stays: it says where your login lives).
-        self.cwd = tempfile.mkdtemp(prefix="claude-sampling-")
+        # An empty cwd keeps this repo's CLAUDE.md and git state out of the model's context.
+        # Dropping CLAUDE* vars stops a parent Claude Code session's settings leaking into the CLI
+        # (CLAUDE_CONFIG_DIR stays: it says where your login lives), and dropping API keys keeps
+        # the calls on your `claude auth login` subscription instead of silently billing a key.
+        self.tmp = tempfile.TemporaryDirectory(prefix="claude-sampling-")  # removed with the client
+        self.cwd = self.tmp.name
         self.env = {k: v for k, v in os.environ.items()
-                    if not k.startswith("CLAUDE") or k == "CLAUDE_CONFIG_DIR"}
+                    if not (k.startswith("CLAUDE") and k != "CLAUDE_CONFIG_DIR")
+                    and k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")}
         self.env["MAX_THINKING_TOKENS"] = str(thinking_budget)
 
     async def complete(self, model: str, prompt: str, system: str | None = None,
