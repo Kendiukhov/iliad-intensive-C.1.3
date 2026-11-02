@@ -13,7 +13,7 @@ decode) and scores how many numbers survive the round-trip.
 
 ## Conventions
 
-- **uv** is the package manager. Run: `uv run python steg.py`. Add deps: `uv add <package>` (never edit pyproject.toml directly).
+- **uv** is the package manager. Run: `uv run python steg.py --config configs/base.yaml` (`configs/debug.yaml` = 2-sample quick run). All settings and prompts live in `configs/`, none in `steg.py`. Add deps: `uv add <package>` (never edit pyproject.toml directly).
 - Model calls go through the Claude Code CLI (`claude -p`, see `ask()` in `steg.py`), so they run on your Claude subscription — log in once with `claude auth login`. No API keys or `.env` needed.
 - Keep it simple: one script, minimal code, no speculative error handling.
 - Runs make real model calls on your Claude subscription. Don't launch a run without asking; small debug runs are fine.

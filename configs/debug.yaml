@@ -1,0 +1,4 @@
+# Quick check: base.yaml with 2 samples. Keys here override the file named in `extends`.
+#   uv run python steg.py --config configs/debug.yaml
+extends: base.yaml
+n_samples: 2
