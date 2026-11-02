@@ -1,0 +1,8 @@
+common_root: configs/base.yaml
+experiments:
+  - config:
+      name: debug_invent
+      function_kwargs:
+        n_eval: 2
+        n_values: 3
+        model_generated_scheme: true
