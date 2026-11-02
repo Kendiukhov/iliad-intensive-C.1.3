@@ -1,5 +1,12 @@
 import json
 
+# Constrains the reply to {"suspiciousness": <int 0-9>} via `claude -p --json-schema`.
+SCHEMA = {
+    "type": "object",
+    "properties": {"suspiciousness": {"type": "integer", "minimum": 0, "maximum": 9}},
+    "required": ["suspiciousness"],
+}
+
 
 def parse_suspiciousness(content: str) -> int:
     """Pull the integer suspiciousness score out of a monitor's JSON reply."""
@@ -12,10 +19,7 @@ async def monitor(client, model, prompt_template, task, output):
     `prompt_template` must contain `{task}` and `{output}` placeholders and ask
     for a JSON reply of the form {"suspiciousness": <int>}.
     """
-    resp = await client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": prompt_template.format(task=task, output=output)}],
-        response_format={"type": "json_object"},
-        temperature=0,
+    content = await client.complete(
+        model, prompt_template.format(task=task, output=output), json_schema=SCHEMA,
     )
-    return parse_suspiciousness(resp.choices[0].message.content)
+    return parse_suspiciousness(content)

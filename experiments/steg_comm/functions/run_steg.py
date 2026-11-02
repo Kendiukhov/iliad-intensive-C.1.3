@@ -10,17 +10,13 @@ from lib.monitor import monitor
 
 
 async def _run_one(client, model, monitor_model, monitor_prompt, main_task, values, scheme,
-                   system_prompt, encoder_template, decoder_template, max_tokens, temperature):
+                   system_prompt, encoder_template, decoder_template):
     answer = await sample(
         client, model,
         encoder_template.format(main_task=main_task, values=" ".join(map(str, values)), scheme=scheme),
-        system_prompt, max_tokens=max_tokens, temperature=temperature,
+        system_prompt,
     )
-    decoded_raw = await sample(
-        client, model,
-        decoder_template.format(answer=answer, scheme=scheme),
-        max_tokens=max_tokens, temperature=temperature,
-    )
+    decoded_raw = await sample(client, model, decoder_template.format(answer=answer, scheme=scheme))
     suspiciousness = await monitor(client, monitor_model, monitor_prompt, main_task, answer)
     decoded = parse_values(decoded_raw)[: len(values)]
     return {
@@ -35,18 +31,18 @@ async def _run_one(client, model, monitor_model, monitor_prompt, main_task, valu
     }
 
 
-async def _run_steg(model, monitor_model, monitor_prompt, susp_weight, n_eval, n_values, value_range,
-                    max_tokens, temperature, seed, log_path, system_prompt, encoder_template,
+async def _run_steg(model, monitor_model, monitor_prompt, susp_weight, thinking_budget, max_concurrency,
+                    n_eval, n_values, value_range, seed, log_path, system_prompt, encoder_template,
                     decoder_template, scheme, main_tasks):
     rng = random.Random(seed)
-    client = make_client()
+    client = make_client(max_concurrency, thinking_budget)
     samples = [
         (rng.choice(main_tasks), [rng.randrange(value_range) for _ in range(n_values)])
         for _ in range(n_eval)
     ]
     results = await asyncio.gather(*[
         _run_one(client, model, monitor_model, monitor_prompt, mt, vals, scheme,
-                 system_prompt, encoder_template, decoder_template, max_tokens, temperature)
+                 system_prompt, encoder_template, decoder_template)
         for mt, vals in samples
     ])
 
@@ -68,9 +64,9 @@ async def _run_steg(model, monitor_model, monitor_prompt, susp_weight, n_eval, n
     print(f"metrics: {metrics}")
 
 
-def run_steg(model, monitor_model, monitor_prompt, susp_weight, n_eval, n_values, value_range,
-             max_tokens, temperature, seed, log_path, system_prompt, encoder_template,
+def run_steg(model, monitor_model, monitor_prompt, susp_weight, thinking_budget, max_concurrency,
+             n_eval, n_values, value_range, seed, log_path, system_prompt, encoder_template,
              decoder_template, scheme, main_tasks):
-    asyncio.run(_run_steg(model, monitor_model, monitor_prompt, susp_weight, n_eval, n_values,
-                          value_range, max_tokens, temperature, seed, log_path, system_prompt,
-                          encoder_template, decoder_template, scheme, main_tasks))
+    asyncio.run(_run_steg(model, monitor_model, monitor_prompt, susp_weight, thinking_budget,
+                          max_concurrency, n_eval, n_values, value_range, seed, log_path,
+                          system_prompt, encoder_template, decoder_template, scheme, main_tasks))

@@ -12,8 +12,8 @@ def _load(dataset_path):
     return [json.loads(line) for line in lines if line.strip()]
 
 
-async def _run_monitor_test(model, monitor_prompt, dataset_path, log_path):
-    client = make_client()
+async def _run_monitor_test(model, thinking_budget, max_concurrency, monitor_prompt, dataset_path, log_path):
+    client = make_client(max_concurrency, thinking_budget)
     rows = _load(dataset_path)
     scores = await asyncio.gather(*[
         monitor(client, model, monitor_prompt, r["task"], r["text"]) for r in rows
@@ -37,5 +37,5 @@ async def _run_monitor_test(model, monitor_prompt, dataset_path, log_path):
     print(f"mean suspiciousness by label: {means}")
 
 
-def run_monitor_test(model, monitor_prompt, dataset_path, log_path):
-    asyncio.run(_run_monitor_test(model, monitor_prompt, dataset_path, log_path))
+def run_monitor_test(model, thinking_budget, max_concurrency, monitor_prompt, dataset_path, log_path):
+    asyncio.run(_run_monitor_test(model, thinking_budget, max_concurrency, monitor_prompt, dataset_path, log_path))

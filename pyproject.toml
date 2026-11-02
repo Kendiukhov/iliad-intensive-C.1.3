@@ -7,8 +7,6 @@ requires-python = ">=3.11"
 dependencies = [
     "pytest>=8.0.0",
     "research-scaffold",
-    "openai>=2.41.1",
-    "python-dotenv>=1.2.3",
 ]
 
 [build-system]
