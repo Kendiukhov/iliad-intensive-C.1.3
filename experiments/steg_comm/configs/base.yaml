@@ -4,6 +4,7 @@ time_stamp_name: true
 log_file_path: results/RUN_NAME/logs.txt
 save_config_path: results/RUN_NAME/config.yaml
 function_kwargs:
+  results_dir: results/RUN_NAME      # completions.jsonl + metrics.json go here
   model: claude-haiku-4-5-20251001   # called via the Claude Code CLI (your subscription)
   thinking_budget: 4096              # MAX_THINKING_TOKENS per call
   max_concurrency: 8                 # parallel `claude -p` processes
