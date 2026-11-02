@@ -27,10 +27,13 @@ cfg = load_config(config_path)
 
 # Model calls go through the Claude Code CLI (`claude -p`), so they run on your Claude
 # subscription; log in once with `claude auth login`. The empty cwd keeps this repo's
-# CLAUDE.md out of the model's context, and dropping CLAUDE* vars stops a parent Claude
-# Code session's settings leaking into the CLI. MAX_THINKING_TOKENS caps the thinking.
-cli_cwd = tempfile.mkdtemp()
-cli_env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE") or k == "CLAUDE_CONFIG_DIR"}
+# CLAUDE.md out of the model's context, dropping CLAUDE* vars stops a parent Claude Code
+# session's settings leaking into the CLI, and dropping API keys keeps the calls on the
+# subscription instead of silently billing a key. MAX_THINKING_TOKENS caps the thinking.
+cli_dir = tempfile.TemporaryDirectory()  # removed when the script exits
+cli_env = {k: v for k, v in os.environ.items()
+           if not (k.startswith("CLAUDE") and k != "CLAUDE_CONFIG_DIR")
+           and k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")}
 cli_env["MAX_THINKING_TOKENS"] = str(cfg["thinking_budget"])
 
 
@@ -38,7 +41,7 @@ def ask(prompt, system=""):
     out = subprocess.run(
         ["claude", "-p", "--model", cfg["model"], "--system-prompt", system,
          "--tools", "", "--safe-mode", "--no-session-persistence", "--output-format", "json"],
-        input=prompt, capture_output=True, text=True, cwd=cli_cwd, env=cli_env,
+        input=prompt, capture_output=True, text=True, cwd=cli_dir.name, env=cli_env,
     )
     reply = json.loads(out.stdout)
     if reply["is_error"]:
