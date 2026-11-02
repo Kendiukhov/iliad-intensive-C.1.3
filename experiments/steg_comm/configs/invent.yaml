@@ -1,0 +1,7 @@
+common_root: configs/base.yaml
+experiments:
+  - config:
+      name: invent
+      function_kwargs:
+        n_eval: 16
+        model_generated_scheme: true

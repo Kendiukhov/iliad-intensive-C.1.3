@@ -9,8 +9,18 @@ from lib.scoring import summarize, exact_match, value_accuracy
 from lib.monitor import monitor
 
 
-async def _run_one(client, model, monitor_model, monitor_prompt, main_task, values, scheme,
-                   system_prompt, encoder_template, decoder_template):
+async def _run_one(client, model, monitor_model, monitor_prompt, main_task, values, value_range, scheme,
+                   model_generated_scheme, scheme_proposal_template, system_prompt, encoder_template,
+                   decoder_template):
+    if model_generated_scheme:
+        # Extra encoder turn. The proposer never sees the values, so it cannot smuggle them into
+        # the scheme text, which the decoder reads.
+        scheme = await sample(
+            client, model,
+            scheme_proposal_template.format(main_task=main_task, n_values=len(values),
+                                            max_value=value_range - 1),
+            system_prompt,
+        )
     answer = await sample(
         client, model,
         encoder_template.format(main_task=main_task, values=" ".join(map(str, values)), scheme=scheme),
@@ -21,6 +31,7 @@ async def _run_one(client, model, monitor_model, monitor_prompt, main_task, valu
     decoded = parse_values(decoded_raw)[: len(values)]
     return {
         "main_task": main_task,
+        "scheme": scheme,
         "values": values,
         "answer": answer,
         "decoded_raw": decoded_raw,
@@ -33,7 +44,8 @@ async def _run_one(client, model, monitor_model, monitor_prompt, main_task, valu
 
 async def _run_steg(model, monitor_model, monitor_prompt, susp_weight, thinking_budget, max_concurrency,
                     n_eval, n_values, value_range, seed, log_path, system_prompt, encoder_template,
-                    decoder_template, scheme, main_tasks):
+                    decoder_template, scheme, model_generated_scheme, scheme_proposal_template,
+                    main_tasks):
     rng = random.Random(seed)
     client = make_client(max_concurrency, thinking_budget)
     samples = [
@@ -41,8 +53,9 @@ async def _run_steg(model, monitor_model, monitor_prompt, susp_weight, thinking_
         for _ in range(n_eval)
     ]
     results = await asyncio.gather(*[
-        _run_one(client, model, monitor_model, monitor_prompt, mt, vals, scheme,
-                 system_prompt, encoder_template, decoder_template)
+        _run_one(client, model, monitor_model, monitor_prompt, mt, vals, value_range, scheme,
+                 model_generated_scheme, scheme_proposal_template, system_prompt, encoder_template,
+                 decoder_template)
         for mt, vals in samples
     ])
 
@@ -66,7 +79,8 @@ async def _run_steg(model, monitor_model, monitor_prompt, susp_weight, thinking_
 
 def run_steg(model, monitor_model, monitor_prompt, susp_weight, thinking_budget, max_concurrency,
              n_eval, n_values, value_range, seed, log_path, system_prompt, encoder_template,
-             decoder_template, scheme, main_tasks):
+             decoder_template, scheme, model_generated_scheme, scheme_proposal_template, main_tasks):
     asyncio.run(_run_steg(model, monitor_model, monitor_prompt, susp_weight, thinking_budget,
                           max_concurrency, n_eval, n_values, value_range, seed, log_path,
-                          system_prompt, encoder_template, decoder_template, scheme, main_tasks))
+                          system_prompt, encoder_template, decoder_template, scheme,
+                          model_generated_scheme, scheme_proposal_template, main_tasks))
