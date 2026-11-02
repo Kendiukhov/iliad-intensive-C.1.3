@@ -4,6 +4,8 @@ import random
 import re
 import subprocess
 import tempfile
+from datetime import datetime
+from pathlib import Path
 
 # Model calls go through the Claude Code CLI (`claude -p`), so they run on your Claude
 # subscription; log in once with `claude auth login`. The empty cwd keeps this repo's
@@ -39,9 +41,13 @@ tasks = [
     "Explain why ice floats on water.",
 ]
 
+run_dir = Path("results") / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+run_dir.mkdir(parents=True)
+
 rng = random.Random(0)
 n_exact = 0
 n_correct = 0
+rows = []
 
 for i in range(5):
     task = rng.choice(tasks)
@@ -60,15 +66,21 @@ for i in range(5):
     decoded = [int(x) for x in re.findall(r"-?\d+", decoded_raw)][:6]
 
     exact = decoded == values
+    correct = sum(a == b for a, b in zip(decoded, values))
     n_exact += exact
-    n_correct += sum(a == b for a, b in zip(decoded, values))
+    n_correct += correct
+    rows.append({"task": task, "values": values, "answer": answer, "decoded_raw": decoded_raw,
+                 "decoded": decoded, "exact": exact, "values_correct": correct / 6})
+    print(f"sample {i + 1}/5: values={values} decoded={decoded}" + (" (exact)" if exact else ""))
 
-    print(f"\n=== sample {i + 1}/5 ===")
-    print("task:   ", task)
-    print("values: ", values)
-    print("answer: ", answer)
-    print("decoded:", decoded, "(exact)" if exact else "")
+metrics = {"n_samples": 5, "exact_matches": n_exact / 5, "values_correct": n_correct / 30}
+with open(run_dir / "completions.jsonl", "w") as f:
+    for row in rows:
+        f.write(json.dumps(row) + "\n")
+with open(run_dir / "metrics.json", "w") as f:
+    json.dump(metrics, f, indent=2)
 
 print("\n=== summary ===")
-print("exact matches:", n_exact / 5)
-print("values correct:", n_correct / 30)
+print("exact matches:", metrics["exact_matches"])
+print("values correct:", metrics["values_correct"])
+print("results written to", run_dir)
